@@ -1,30 +1,36 @@
 import React, { useState } from 'react';
-import { Trophy, Award, Medal, Layers, Filter } from 'lucide-react';
-import { PuntajeSeccion, MaterialId } from '../types/recycling';
-import { MATERIALES } from '../data/initialData';
+import { Trophy, Award, Medal, Layers, Filter, PlusCircle } from 'lucide-react';
+import { PuntajeSeccion } from '../types/recycling';
 
 interface LeaderboardTableProps {
   puntajes: PuntajeSeccion[];
   seccionSeleccionada?: string;
   onSeleccionarSeccion?: (seccion: string) => void;
+  onIrARegistrar?: () => void;
 }
 
 /**
  * Componente: Tabla de Posiciones entre Secciones
  * 
- * Cumple con el Requerimiento 2 y el Criterio de Aceptación:
- * "Tabla de posiciones entre secciones"
- * "abro la app, hago click en un boton llamado resultados y veo una tabla con lo que te pedi sin ningún error en la consola."
+ * Cumple con los requisitos:
+ * 1. Ancho desde 320px, utilizable con una mano sin zoom.
+ * 2. Contraste alto para lectura al sol; textos >= 16px (text-base).
+ * 4. Botones secundarios para los filtros (un solo botón principal en la pantalla).
+ * 5. Estado vacío claro si no hay ningún pesaje registrado, invitando a la primera acción.
+ * 6. Sin tecnicismos.
  */
 export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
   puntajes,
   seccionSeleccionada,
   onSeleccionarSeccion,
+  onIrARegistrar,
 }) => {
-  // Permite al usuario alternar entre vista general y la tabla de kilos según material
   const [mostrarDesglose, setMostrarDesglose] = useState(false);
 
-  // Cálculo de totales acumulados de todo el instituto por material para el pie de tabla
+  // Verificamos si realmente hay datos cargados (o si todos están en 0)
+  const hayDatosReales = puntajes.some((p) => p.kilosTotales > 0);
+
+  // Cálculo de totales acumulados de todo el instituto por material
   const totalesGeneralesPorMaterial = puntajes.reduce(
     (acc, p) => ({
       plastico: Number((acc.plastico + p.desgloseKilos.plastico).toFixed(1)),
@@ -37,67 +43,64 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
     { plastico: 0, papel: 0, vidrio: 0, aluminio: 0, kilos: 0, puntos: 0 }
   );
 
-  /**
-   * Helper para obtener el badge visual de las 3 primeras posiciones
-   */
   const renderInsigniaPosicion = (index: number) => {
     const posicion = index + 1;
     if (posicion === 1) {
       return (
-        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-800 font-bold text-xs ring-2 ring-amber-300">
-          <Trophy className="w-3.5 h-3.5 mr-0.5 text-amber-600" />
+        <span className="inline-flex items-center justify-center min-w-[38px] h-9 px-1 rounded-full bg-amber-200 text-black font-black text-base border-2 border-amber-600 shadow-xs">
+          <Trophy className="w-4 h-4 mr-0.5 text-amber-900" />
           1°
         </span>
       );
     }
     if (posicion === 2) {
       return (
-        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-200 text-slate-800 font-bold text-xs ring-1 ring-slate-300">
-          <Award className="w-3.5 h-3.5 mr-0.5 text-slate-600" />
+        <span className="inline-flex items-center justify-center min-w-[38px] h-9 px-1 rounded-full bg-slate-200 text-black font-black text-base border-2 border-slate-500 shadow-xs">
+          <Award className="w-4 h-4 mr-0.5 text-slate-800" />
           2°
         </span>
       );
     }
     if (posicion === 3) {
       return (
-        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-50 text-amber-900 font-bold text-xs border border-amber-300">
-          <Medal className="w-3.5 h-3.5 mr-0.5 text-amber-700" />
+        <span className="inline-flex items-center justify-center min-w-[38px] h-9 px-1 rounded-full bg-amber-100 text-black font-black text-base border-2 border-amber-700 shadow-xs">
+          <Medal className="w-4 h-4 mr-0.5 text-amber-900" />
           3°
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-semibold text-xs font-mono">
+      <span className="inline-flex items-center justify-center min-w-[38px] h-9 px-1 rounded-full bg-slate-100 text-black font-extrabold text-base border border-slate-400">
         {posicion}°
       </span>
     );
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border-2 border-slate-300 shadow-sm overflow-hidden">
       {/* Cabecera del Leaderboard */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+      <div className="p-4 sm:p-5 border-b-2 border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
         <div>
           <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-500" />
-            <h2 className="text-base font-bold text-slate-900">
-              Tabla de Posiciones
+            <Trophy className="w-6 h-6 text-amber-600" />
+            <h2 className="text-xl font-black text-black">
+              Posiciones de la competencia
             </h2>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Clasificación oficial por puntos acumulados y kilos reciclados
+          <p className="text-base text-slate-800 font-medium mt-1">
+            Secciones ordenadas por mayor cantidad de puntos
           </p>
         </div>
 
-        {/* Botón selector de vista para pantallas de celular */}
-        <div className="flex items-center gap-1 self-start sm:self-auto bg-slate-200/80 p-1 rounded-xl">
+        {/* Botones secundarios de alternar vista (min-height 48px) */}
+        <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-200 p-1.5 rounded-xl border border-slate-400">
           <button
             type="button"
             onClick={() => setMostrarDesglose(false)}
-            className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors whitespace-nowrap min-h-[32px] ${
+            className={`px-4 min-h-[44px] text-base rounded-lg transition-colors whitespace-nowrap flex items-center justify-center ${
               !mostrarDesglose
-                ? 'bg-white text-slate-900 shadow-xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-black text-white font-black shadow-xs'
+                : 'text-slate-900 hover:text-black font-bold'
             }`}
           >
             General
@@ -106,65 +109,79 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
             type="button"
             id="btn-tabla"
             onClick={() => setMostrarDesglose(true)}
-            className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap min-h-[32px] ${
+            className={`px-4 min-h-[44px] text-base rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap justify-center ${
               mostrarDesglose
-                ? 'bg-emerald-700 text-white shadow-xs font-bold'
-                : 'text-slate-700 hover:text-slate-900'
+                ? 'bg-emerald-900 text-white font-black shadow-xs'
+                : 'text-slate-900 hover:text-black font-bold'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className="w-5 h-5" />
             Tabla
           </button>
         </div>
       </div>
 
-      {/* Contenedor con scroll horizontal para celulares garantizando que no se corte nada */}
-      <div className="overflow-x-auto w-full">
-        <table className="w-full text-left border-collapse text-xs sm:text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-100/70 text-slate-600 text-[11px] uppercase tracking-wider font-semibold">
-              <th scope="col" className="py-3 px-3 sm:px-4 text-center w-12 sm:w-16">
-                Pos.
-              </th>
-              <th scope="col" className="py-3 px-3 sm:px-4">
-                Sección
-              </th>
-              <th scope="col" className="py-3 px-3 sm:px-4 text-right">
-                Kilos Totales
-              </th>
-              <th scope="col" className="py-3 px-3 sm:px-4 text-right">
-                Puntos
-              </th>
-              {mostrarDesglose && (
-                <>
-                  <th scope="col" className="py-3 px-2 text-right text-amber-700">
-                    Plástico
-                  </th>
-                  <th scope="col" className="py-3 px-2 text-right text-blue-700">
-                    Papel
-                  </th>
-                  <th scope="col" className="py-3 px-2 text-right text-emerald-700">
-                    Vidrio
-                  </th>
-                  <th scope="col" className="py-3 px-2 text-right text-purple-700">
-                    Aluminio
-                  </th>
-                </>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {puntajes.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={mostrarDesglose ? 8 : 4}
-                  className="py-8 text-center text-slate-400 text-xs"
-                >
-                  No hay secciones registradas aún.
-                </td>
+      {/* Requisito 5: Estado vacío cuando no hay datos */}
+      {!hayDatosReales ? (
+        <div className="p-6 sm:p-8 text-center bg-slate-50 flex flex-col items-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-100 border-2 border-amber-500 text-amber-900 flex items-center justify-center mb-3">
+            <Trophy className="w-7 h-7" />
+          </div>
+          <h3 className="text-lg font-black text-black mb-1">
+            Aún no hay ningún dato cargado
+          </h3>
+          <p className="text-base text-slate-800 max-w-sm mb-4 font-medium">
+            ¡Comienza anotando el primer pesaje para que las secciones empiecen a competir!
+          </p>
+          {onIrARegistrar && (
+            <button
+              type="button"
+              onClick={onIrARegistrar}
+              className="px-5 min-h-[48px] bg-emerald-900 hover:bg-black text-white font-extrabold text-base rounded-xl transition-colors flex items-center gap-2"
+            >
+              <PlusCircle className="w-5 h-5" />
+              <span>Anotar el primer pesaje ahora</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        /* Contenedor con scroll horizontal para pantallas pequeñas desde 320px */
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left border-collapse text-base">
+            <thead>
+              <tr className="border-b-2 border-slate-300 bg-slate-200 text-black text-base uppercase tracking-wide font-black">
+                <th scope="col" className="py-3 px-3 text-center w-14">
+                  Lugar
+                </th>
+                <th scope="col" className="py-3 px-3 min-w-[120px]">
+                  Sección
+                </th>
+                <th scope="col" className="py-3 px-3 text-right">
+                  Kilos
+                </th>
+                <th scope="col" className="py-3 px-3 text-right">
+                  Puntos
+                </th>
+                {mostrarDesglose && (
+                  <>
+                    <th scope="col" className="py-3 px-3 text-right text-amber-900">
+                      Plástico
+                    </th>
+                    <th scope="col" className="py-3 px-3 text-right text-blue-900">
+                      Papel
+                    </th>
+                    <th scope="col" className="py-3 px-3 text-right text-emerald-900">
+                      Vidrio
+                    </th>
+                    <th scope="col" className="py-3 px-3 text-right text-purple-900">
+                      Aluminio
+                    </th>
+                  </>
+                )}
               </tr>
-            ) : (
-              puntajes.map((fila, index) => {
+            </thead>
+            <tbody className="divide-y-2 divide-slate-200">
+              {puntajes.map((fila, index) => {
                 const esSeleccionada = seccionSeleccionada === fila.seccion;
 
                 return (
@@ -173,39 +190,33 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
                     onClick={() => onSeleccionarSeccion?.(fila.seccion)}
                     className={`transition-colors cursor-pointer ${
                       index === 0
-                        ? 'bg-amber-50/30 hover:bg-amber-50/60'
+                        ? 'bg-amber-100/50 hover:bg-amber-100'
                         : index % 2 === 0
-                        ? 'bg-white hover:bg-slate-50'
-                        : 'bg-slate-50/40 hover:bg-slate-100/60'
-                    } ${esSeleccionada ? 'ring-2 ring-emerald-500 ring-inset' : ''}`}
+                        ? 'bg-white hover:bg-slate-100'
+                        : 'bg-slate-50 hover:bg-slate-100'
+                    } ${esSeleccionada ? 'ring-3 ring-emerald-700 ring-inset bg-emerald-50' : ''}`}
                   >
                     {/* Posición */}
-                    <td className="py-3 px-3 sm:px-4 text-center">
+                    <td className="py-3 px-3 text-center">
                       {renderInsigniaPosicion(index)}
                     </td>
 
                     {/* Nombre de la Sección */}
-                    <td className="py-3 px-3 sm:px-4">
-                      <div className="font-bold text-slate-900 text-sm">
-                        {fila.seccion}
-                      </div>
-                      <span className="text-[11px] text-slate-600 block sm:inline">
-                        {fila.totalAportes} {fila.totalAportes === 1 ? 'aporte' : 'aportes'}
-                      </span>
+                    <td className="py-3 px-3 font-black text-black text-base">
+                      {fila.seccion}
                     </td>
 
-                    {/* Kilos Totales con Tabular Nums para alineación vertical limpia */}
-                    <td className="py-3 px-3 sm:px-4 text-right font-mono tabular-nums font-bold text-slate-800">
-                      {fila.kilosTotales}{' '}
-                      <span className="text-[10px] text-slate-600 font-sans font-normal">kg</span>
+                    {/* Kilos Totales */}
+                    <td className="py-3 px-3 text-right font-black text-black font-mono tabular-nums text-base">
+                      {fila.kilosTotales} kg
                     </td>
 
                     {/* Puntos Totales */}
-                    <td className="py-3 px-3 sm:px-4 text-right">
-                      <span className="font-mono tabular-nums font-bold text-emerald-800 text-sm sm:text-base">
+                    <td className="py-3 px-3 text-right">
+                      <span className="font-mono tabular-nums font-black text-emerald-950 text-lg">
                         {fila.puntosTotales}
                       </span>
-                      <span className="text-[10px] text-emerald-600 font-semibold block leading-none">
+                      <span className="text-base font-extrabold text-emerald-800 ml-1">
                         pts
                       </span>
                     </td>
@@ -213,68 +224,68 @@ export const LeaderboardTable: React.FC<LeaderboardTableProps> = ({
                     {/* Columnas de Desglose por Material (si se activa) */}
                     {mostrarDesglose && (
                       <>
-                        <td className="py-3 px-2 text-right font-mono tabular-nums text-slate-600 text-xs">
+                        <td className="py-3 px-3 text-right font-mono tabular-nums text-black font-bold text-base">
                           {fila.desgloseKilos.plastico} kg
                         </td>
-                        <td className="py-3 px-2 text-right font-mono tabular-nums text-slate-600 text-xs">
+                        <td className="py-3 px-3 text-right font-mono tabular-nums text-black font-bold text-base">
                           {fila.desgloseKilos.papel} kg
                         </td>
-                        <td className="py-3 px-2 text-right font-mono tabular-nums text-slate-600 text-xs">
+                        <td className="py-3 px-3 text-right font-mono tabular-nums text-black font-bold text-base">
                           {fila.desgloseKilos.vidrio} kg
                         </td>
-                        <td className="py-3 px-2 text-right font-mono tabular-nums text-slate-600 text-xs">
+                        <td className="py-3 px-3 text-right font-mono tabular-nums text-black font-bold text-base">
                           {fila.desgloseKilos.aluminio} kg
                         </td>
                       </>
                     )}
                   </tr>
                 );
-              })
-            )}
-          </tbody>
-          {mostrarDesglose && puntajes.length > 0 && (
-            <tfoot>
-              <tr className="border-t-2 border-slate-300 bg-slate-100 font-bold text-slate-900 text-xs">
-                <td colSpan={2} className="py-2.5 px-3 sm:px-4 text-left">
-                  Total Instituto:
-                </td>
-                <td className="py-2.5 px-3 sm:px-4 text-right font-mono tabular-nums text-slate-900">
-                  {totalesGeneralesPorMaterial.kilos}{' '}
-                  <span className="text-[10px] text-slate-500 font-normal">kg</span>
-                </td>
-                <td className="py-2.5 px-3 sm:px-4 text-right font-mono tabular-nums text-emerald-800">
-                  {totalesGeneralesPorMaterial.puntos}{' '}
-                  <span className="text-[10px] text-emerald-600 font-normal">pts</span>
-                </td>
-                <td className="py-2.5 px-2 text-right font-mono tabular-nums text-amber-800">
-                  {totalesGeneralesPorMaterial.plastico} kg
-                </td>
-                <td className="py-2.5 px-2 text-right font-mono tabular-nums text-blue-800">
-                  {totalesGeneralesPorMaterial.papel} kg
-                </td>
-                <td className="py-2.5 px-2 text-right font-mono tabular-nums text-emerald-800">
-                  {totalesGeneralesPorMaterial.vidrio} kg
-                </td>
-                <td className="py-2.5 px-2 text-right font-mono tabular-nums text-purple-800">
-                  {totalesGeneralesPorMaterial.aluminio} kg
-                </td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
+              })}
+            </tbody>
 
-      {/* Pie de tabla explicativo de puntos */}
-      <div className="p-3 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-        <span className="flex items-center gap-1">
-          <Filter className="w-3 h-3 text-slate-400" />
-          Reglas de puntaje:
+            {/* Fila de Totales de todo el instituto */}
+            {mostrarDesglose && puntajes.length > 0 && (
+              <tfoot>
+                <tr className="border-t-3 border-black bg-slate-200 font-black text-black text-base">
+                  <td colSpan={2} className="py-3.5 px-3 text-left">
+                    Total Instituto:
+                  </td>
+                  <td className="py-3.5 px-3 text-right font-mono tabular-nums">
+                    {totalesGeneralesPorMaterial.kilos} kg
+                  </td>
+                  <td className="py-3.5 px-3 text-right font-mono tabular-nums text-emerald-950">
+                    {totalesGeneralesPorMaterial.puntos} pts
+                  </td>
+                  <td className="py-3.5 px-3 text-right font-mono tabular-nums text-amber-950">
+                    {totalesGeneralesPorMaterial.plastico} kg
+                  </td>
+                  <td className="py-3.5 px-3 text-right font-mono tabular-nums text-blue-950">
+                    {totalesGeneralesPorMaterial.papel} kg
+                  </td>
+                  <td className="py-3.5 px-3 text-right font-mono tabular-nums text-emerald-950">
+                    {totalesGeneralesPorMaterial.vidrio} kg
+                  </td>
+                  <td className="py-3.5 px-3 text-right font-mono tabular-nums text-purple-950">
+                    {totalesGeneralesPorMaterial.aluminio} kg
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      )}
+
+      {/* Pie de tabla explicativo con alto contraste */}
+      <div className="p-4 bg-slate-100 border-t-2 border-slate-200 flex flex-col gap-1 text-base text-slate-900 font-medium">
+        <span className="font-extrabold text-black flex items-center gap-1.5">
+          <Filter className="w-5 h-5 text-emerald-900" />
+          Valor de los puntos por cada kilo:
         </span>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span>Plástico: <strong>10 pts/kg</strong></span>
-          <span>Papel/Cartón: <strong>5 pts/kg</strong></span>
-          <span>Vidrio: <strong>8 pts/kg</strong></span>
-          <span>Aluminio: <strong>15 pts/kg</strong></span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+          <span>Plástico: <strong className="text-black">10 pts/kg</strong></span>
+          <span>Papel/Cartón: <strong className="text-black">5 pts/kg</strong></span>
+          <span>Vidrio: <strong className="text-black">8 pts/kg</strong></span>
+          <span>Aluminio: <strong className="text-black">15 pts/kg</strong></span>
         </div>
       </div>
     </div>

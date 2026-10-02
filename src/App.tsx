@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trophy, PlusCircle, Sparkles, RefreshCw, Download, FileText } from 'lucide-react';
+import { Trophy, PlusCircle, Sparkles, RefreshCw, Download, FileText, Trash2 } from 'lucide-react';
 import { RegistroReciclaje } from './types/recycling';
 import {
   obtenerRegistros,
@@ -22,24 +22,11 @@ import { MonthlyGoalCard } from './components/MonthlyGoalCard';
 import { RecentEntriesList } from './components/RecentEntriesList';
 
 export default function App() {
-  // Estado principal de navegación: 'registrar' o 'resultados'
-  // Al abrir la app, el usuario puede dar click directamente en el botón 'Resultados'
   const [pestanaActiva, setPestanaActiva] = useState<'registrar' | 'resultados'>('registrar');
-
-  // Estado con la lista de registros (cargados desde localStorage o datos iniciales)
   const [registros, setRegistros] = useState<RegistroReciclaje[]>(() => obtenerRegistros());
-
-  // Meta mensual de kilos para todo el instituto
   const [metaKilos, setMetaKilos] = useState<number>(() => obtenerMetaMensual());
-
-  // Sección opcional seleccionada para resaltar en la tabla
   const [seccionSeleccionada, setSeccionSeleccionada] = useState<string | undefined>(undefined);
 
-  /**
-   * ⚠️ PUNTO CRÍTICO DONDE ALGUIEN PODRÍA EQUIVOCARSE:
-   * Guardar en localStorage dentro de un useEffect asegura que cada nuevo pesaje
-   * quede persistido en la memoria del celular sin llamadas innecesarias o desincronizadas.
-   */
   useEffect(() => {
     guardarRegistros(registros);
   }, [registros]);
@@ -48,10 +35,6 @@ export default function App() {
     guardarMetaMensual(metaKilos);
   }, [metaKilos]);
 
-  /**
-   * Cálculos memorizados para rendimiento óptimo en dispositivos móviles.
-   * Evita recalcular ordenamientos de tabla en cada render si los registros no cambiaron.
-   */
   const puntajesPorSeccion = useMemo(() => {
     return calcularPuntajesPorSeccion(registros);
   }, [registros]);
@@ -60,9 +43,6 @@ export default function App() {
     return calcularKilosTotalesInstituto(registros);
   }, [registros]);
 
-  /**
-   * Manejador para registrar un nuevo pesaje
-   */
   const handleGuardarRegistro = (
     nuevoAporte: Omit<RegistroReciclaje, 'id' | 'fecha'>
   ) => {
@@ -76,51 +56,51 @@ export default function App() {
     setSeccionSeleccionada(nuevoRegistro.seccion);
   };
 
-  /**
-   * Manejador para revertir/eliminar un aporte si hubo error de balanza
-   */
   const handleEliminarRegistro = (id: string) => {
     setRegistros((prev) => prev.filter((r) => r.id !== id));
   };
 
-  /**
-   * Reiniciar a datos de ejemplo si se desea limpiar o probar desde cero
-   */
   const handleRestablecerDatos = () => {
-    if (window.confirm('¿Deseas restaurar los registros de ejemplo para la competencia?')) {
+    if (window.confirm('¿Quieres volver a cargar los datos de ejemplo del instituto?')) {
       localStorage.removeItem('reciclar_puntos_registros_v1');
       const iniciales = obtenerRegistros();
       setRegistros(iniciales);
     }
   };
 
+  const handleVaciarTodo = () => {
+    if (window.confirm('¿Quieres vaciar todos los registros para comprobar el mensaje de estado vacío?')) {
+      localStorage.setItem('reciclar_puntos_registros_v1', JSON.stringify([]));
+      setRegistros([]);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col items-center">
+    <div className="min-h-screen bg-slate-200 flex flex-col items-center">
       {/* 
-        Contenedor central con proporción móvil (Mobile-First):
-        En teléfonos ocupa el 100% del ancho con padding táctil.
-        En pantallas grandes se muestra como una interfaz de dispositivo elegante y centrada.
+        Contenedor central adaptado desde 320px de ancho para uso con una sola mano.
+        Sin desbordes horizontales ni necesidad de hacer zoom.
       */}
-      <div className="w-full max-w-lg bg-slate-50 min-h-screen flex flex-col border-x border-slate-200/80 shadow-md pb-24">
+      <div className="w-full max-w-lg bg-slate-50 min-h-screen flex flex-col border-x-2 border-slate-300 shadow-lg pb-32">
         
-        {/* Barra Superior de la Aplicación (Top App Bar Android) */}
-        <header className="sticky top-0 z-30 bg-emerald-800 text-white px-4 py-3 shadow-md flex items-center justify-between">
+        {/* Barra Superior de la Aplicación - Alto contraste para exteriores bajo sol */}
+        <header className="sticky top-0 z-30 bg-emerald-950 text-white px-3 sm:px-4 py-3.5 shadow-md flex items-center justify-between border-b-2 border-black">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-700/80 border border-emerald-600 flex items-center justify-center text-emerald-200 shrink-0">
-              <Sparkles className="w-4 h-4 text-emerald-300" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-800 border-2 border-emerald-400 flex items-center justify-center text-emerald-200 shrink-0">
+              <Sparkles className="w-5 h-5 text-emerald-300" />
             </div>
             <div>
-              <h1 className="text-base font-bold tracking-tight leading-tight">
+              <h1 className="text-lg font-black tracking-tight leading-tight text-white">
                 RECICLAR PUNTOS
               </h1>
-              <p className="text-[11px] text-emerald-200 leading-tight">
-                Competencia Intersecciones de Instituto
+              <p className="text-base text-emerald-200 font-semibold leading-tight">
+                Competencia del Instituto
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
-            {/* Botón para descargar reporte oficial en PDF */}
+          {/* Botones secundarios de acción rápida (min-height 44px) */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() =>
@@ -131,106 +111,117 @@ export default function App() {
                 })
               }
               title="Descargar reporte en PDF"
-              className="p-1.5 text-emerald-200 hover:text-white rounded-lg hover:bg-emerald-700/60 transition-colors flex items-center gap-1 text-xs font-medium"
+              className="min-h-[44px] px-2.5 rounded-xl border border-emerald-600 bg-emerald-900 hover:bg-emerald-800 text-white font-bold text-base flex items-center gap-1 transition-colors"
             >
-              <FileText className="w-4 h-4 text-emerald-300" />
-              <span className="hidden sm:inline text-[11px]">PDF</span>
+              <FileText className="w-5 h-5 text-emerald-300" />
+              <span>PDF</span>
             </button>
 
-            {/* Botón para exportar copia de seguridad en JSON */}
             <button
               type="button"
               onClick={() => exportarRegistrosAArchivoJSON(registros)}
-              title="Descargar copia de seguridad en JSON"
-              className="p-1.5 text-emerald-200 hover:text-white rounded-lg hover:bg-emerald-700/60 transition-colors"
+              title="Guardar copia en archivo de texto"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-emerald-200 hover:text-white rounded-xl border border-emerald-700 bg-emerald-900 hover:bg-emerald-800 transition-colors"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-5 h-5" />
             </button>
 
-            {/* Botón para reiniciar datos de prueba si se requiere */}
+            {/* Botón para vaciar datos y probar estado vacío */}
+            <button
+              type="button"
+              onClick={handleVaciarTodo}
+              title="Vaciar datos para comprobar mensaje de estado vacío"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-amber-300 hover:text-white rounded-xl border border-emerald-700 bg-emerald-900 hover:bg-emerald-800 transition-colors"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+
             <button
               type="button"
               onClick={handleRestablecerDatos}
-              title="Restablecer datos de prueba"
-              className="p-1.5 text-emerald-300 hover:text-white rounded-lg hover:bg-emerald-700/60 transition-colors"
+              title="Reiniciar datos de prueba"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center text-emerald-300 hover:text-white rounded-xl border border-emerald-700 bg-emerald-900 hover:bg-emerald-800 transition-colors"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-5 h-5" />
             </button>
           </div>
         </header>
 
         {/* 
-          Selector de Vista Principal:
-          Botón 'Resultados' cumple directamente con el criterio de aceptación:
-          "abro la app, hago click en un boton llamado resultados y veo una tabla con lo que te pedi sin ningún error en la consola."
+          Selector de Vista con Botones Secundarios:
+          Ambos botones tienen etiquetas visibles y texto >= 16px.
         */}
-        <div className="p-3 bg-white border-b border-slate-200">
-          <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+        <div className="p-3 bg-white border-b-2 border-slate-300">
+          <div className="grid grid-cols-2 gap-2 bg-slate-200 p-1.5 rounded-2xl border border-slate-300">
             <button
               type="button"
               onClick={() => setPestanaActiva('registrar')}
-              className={`h-11 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
+              className={`min-h-[48px] rounded-xl text-base font-extrabold transition-all flex items-center justify-center gap-2 ${
                 pestanaActiva === 'registrar'
-                  ? 'bg-white text-emerald-800 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-black text-white shadow-sm'
+                  : 'text-slate-900 hover:text-black font-bold'
               }`}
             >
-              <PlusCircle className="w-4 h-4" />
-              <span>Registrar Kilos</span>
+              <PlusCircle className="w-5 h-5" />
+              <span>Anotar Kilos</span>
             </button>
 
             <button
               type="button"
               id="btn-resultados"
               onClick={() => setPestanaActiva('resultados')}
-              className={`h-11 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
+              className={`min-h-[48px] rounded-xl text-base font-extrabold transition-all flex items-center justify-center gap-2 ${
                 pestanaActiva === 'resultados'
-                  ? 'bg-emerald-700 text-white shadow-sm'
-                  : 'bg-white text-slate-800 hover:bg-slate-50 border border-slate-200 shadow-2xs'
+                  ? 'bg-emerald-900 text-white shadow-sm'
+                  : 'text-slate-900 hover:text-black font-bold'
               }`}
             >
-              <Trophy className="w-4 h-4 text-amber-400" />
+              <Trophy className="w-5 h-5 text-amber-400" />
               <span>Resultados</span>
             </button>
           </div>
         </div>
 
-        {/* Contenido Principal según la pestaña activa */}
+        {/* Contenido Principal */}
         <main className="p-3 sm:p-4 space-y-4 flex-1">
           
-          {/* VISTA 1: REGISTRAR KILOS */}
+          {/* PANTALLA 1: ANOTAR KILOS */}
           {pestanaActiva === 'registrar' && (
             <div className="space-y-4">
-              {/* Banner rápido para ir directamente a Resultados si el usuario lo desea */}
-              <div className="bg-gradient-to-r from-emerald-800 to-teal-800 text-white rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+              
+              {/* Tarjeta informativa de la competencia */}
+              <div className="bg-emerald-900 text-white rounded-2xl p-4 border-2 border-black shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold text-emerald-200 uppercase tracking-wider">
+                  <p className="text-base font-black text-emerald-300 uppercase tracking-wide">
                     Competencia en Vivo
                   </p>
-                  <p className="text-sm font-bold mt-0.5">
-                    ¿Quieres ver cómo van las secciones?
-                  </p>
-                  <p className="text-xs text-emerald-100 mt-0.5">
-                    Total reciclado: <span className="font-mono font-bold text-white">{kilosTotalesInstituto} kg</span>
+                  <p className="text-base font-medium text-white mt-0.5">
+                    Total acumulado por el instituto:{' '}
+                    <strong className="text-xl font-black text-amber-300 font-mono">
+                      {kilosTotalesInstituto} kilos
+                    </strong>
                   </p>
                 </div>
+                
+                {/* Botón secundario para ir a resultados */}
                 <button
                   type="button"
                   onClick={() => setPestanaActiva('resultados')}
-                  className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-1.5"
+                  className="min-h-[48px] px-4 bg-white text-slate-900 font-extrabold text-base rounded-xl border-2 border-black hover:bg-slate-100 transition-colors shrink-0 flex items-center justify-center gap-2"
                 >
-                  <Trophy className="w-3.5 h-3.5 text-slate-900" />
-                  Resultados
+                  <Trophy className="w-5 h-5 text-amber-600" />
+                  <span>Ver posiciones</span>
                 </button>
               </div>
 
-              {/* Formulario de registro (Requerimiento 1) */}
+              {/* Formulario de registro (con el ÚNICO botón principal de esta pantalla) */}
               <RegisterForm
                 onGuardarRegistro={handleGuardarRegistro}
                 onIrAResultados={() => setPestanaActiva('resultados')}
+                totalRegistrosExistentes={registros.length}
               />
 
-              {/* Historial reciente para control */}
+              {/* Historial reciente */}
               <RecentEntriesList
                 registros={registros}
                 onEliminarRegistro={handleEliminarRegistro}
@@ -238,55 +229,59 @@ export default function App() {
             </div>
           )}
 
-          {/* VISTA 2: RESULTADOS (Cumple con Requerimientos 2 y 3, y Criterio de Aceptación) */}
+          {/* PANTALLA 2: RESULTADOS */}
           {pestanaActiva === 'resultados' && (
-            <div className="space-y-4 animate-fadeIn">
+            <div className="space-y-4">
               
-              {/* Requerimiento 3: Meta mensual con porcentaje de avance */}
+              {/* Requerimiento 3: Meta mensual con porcentaje */}
               <MonthlyGoalCard
                 kilosActuales={kilosTotalesInstituto}
                 metaKilos={metaKilos}
                 onActualizarMeta={setMetaKilos}
               />
 
-              {/* Requerimiento 2: Tabla de posiciones entre secciones */}
+              {/* Requerimiento 2: Tabla de posiciones */}
               <LeaderboardTable
                 puntajes={puntajesPorSeccion}
                 seccionSeleccionada={seccionSeleccionada}
                 onSeleccionarSeccion={setSeccionSeleccionada}
+                onIrARegistrar={() => setPestanaActiva('registrar')}
               />
 
-              {/* Historial reciente visible en resultados */}
+              {/* Historial reciente */}
               <RecentEntriesList
                 registros={registros}
                 onEliminarRegistro={handleEliminarRegistro}
               />
 
-              {/* Botón para descargar informe oficial en PDF */}
-              <button
-                type="button"
-                onClick={() =>
-                  descargarReportePDF({
-                    puntajes: puntajesPorSeccion,
-                    kilosTotales: kilosTotalesInstituto,
-                    metaKilos,
-                  })
-                }
-                className="w-full h-12 bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 min-h-[48px]"
-              >
-                <FileText className="w-4 h-4 text-emerald-300" />
-                <span>Descargar Reporte Completo en PDF</span>
-              </button>
+              {/* 
+                Requisito 4: UN SOLO BOTÓN PRINCIPAL POR PANTALLA
+                En esta pantalla de resultados, el botón principal es la descarga oficial del PDF.
+                El botón de volver a anotar es secundario (fondo blanco con borde gris).
+              */}
+              <div className="space-y-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    descargarReportePDF({
+                      puntajes: puntajesPorSeccion,
+                      kilosTotales: kilosTotalesInstituto,
+                      metaKilos,
+                    })
+                  }
+                  className="w-full min-h-[54px] bg-emerald-900 hover:bg-black text-white font-black text-base rounded-xl shadow-md transition-all flex items-center justify-center gap-2.5 border-2 border-black"
+                >
+                  <FileText className="w-5 h-5 text-emerald-300" />
+                  <span>Descargar Reporte Oficial en PDF</span>
+                </button>
 
-              {/* Botón para volver a registrar pesaje */}
-              <div>
                 <button
                   type="button"
                   onClick={() => setPestanaActiva('registrar')}
-                  className="w-full h-11 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full min-h-[48px] bg-white border-2 border-slate-700 hover:bg-slate-100 text-slate-900 font-bold text-base rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
-                  <PlusCircle className="w-4 h-4 text-emerald-700" />
-                  Registrar otro pesaje de reciclaje
+                  <PlusCircle className="w-5 h-5 text-emerald-900" />
+                  <span>Anotar otro pesaje de reciclaje</span>
                 </button>
               </div>
             </div>
@@ -294,34 +289,34 @@ export default function App() {
         </main>
 
         {/* 
-          Barra de Navegación Inferior (Estilo Android Bottom Navigation Bar)
-          Diseñada para alcance natural con el pulgar en celulares
+          Barra de Navegación Inferior (Touch Thumb-Zone para manejo con una sola mano):
+          Botones de mínimo 54px de alto, texto >= 16px, alto contraste
         */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-1.5 px-6 max-w-lg mx-auto flex items-center justify-around shadow-lg">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t-3 border-slate-300 px-4 py-2 max-w-lg mx-auto flex items-center justify-around shadow-2xl">
           <button
             type="button"
             onClick={() => setPestanaActiva('registrar')}
-            className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl transition-colors min-h-[48px] ${
+            className={`flex-1 min-h-[52px] flex items-center justify-center gap-2 rounded-xl transition-colors mx-1 ${
               pestanaActiva === 'registrar'
-                ? 'text-emerald-800 font-bold'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-emerald-900 text-white font-black border-2 border-black'
+                : 'text-slate-900 hover:bg-slate-100 font-bold border border-slate-300'
             }`}
           >
-            <PlusCircle className={`w-5 h-5 ${pestanaActiva === 'registrar' ? 'text-emerald-700' : 'text-slate-400'}`} />
-            <span className="text-[11px] mt-0.5 tracking-tight">Registrar</span>
+            <PlusCircle className="w-5 h-5" />
+            <span className="text-base">Anotar</span>
           </button>
 
           <button
             type="button"
             onClick={() => setPestanaActiva('resultados')}
-            className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl transition-colors min-h-[48px] ${
+            className={`flex-1 min-h-[52px] flex items-center justify-center gap-2 rounded-xl transition-colors mx-1 ${
               pestanaActiva === 'resultados'
-                ? 'text-emerald-800 font-bold'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-emerald-900 text-white font-black border-2 border-black'
+                : 'text-slate-900 hover:bg-slate-100 font-bold border border-slate-300'
             }`}
           >
-            <Trophy className={`w-5 h-5 ${pestanaActiva === 'resultados' ? 'text-amber-500' : 'text-slate-400'}`} />
-            <span className="text-[11px] mt-0.5 tracking-tight">Resultados</span>
+            <Trophy className="w-5 h-5 text-amber-400" />
+            <span className="text-base">Resultados</span>
           </button>
         </nav>
 

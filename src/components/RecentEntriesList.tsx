@@ -11,21 +11,20 @@ interface RecentEntriesListProps {
 /**
  * Componente: Historial Reciente de Aportes
  * 
- * Permite auditar las últimas cargas realizadas y eliminar un registro
- * en caso de que alguien se haya equivocado al pesar.
+ * Cumple con los requisitos de accesibilidad:
+ * 1. Ancho desde 320px, sin zoom.
+ * 2. Texto >= 16px (text-base) y alto contraste para luz solar.
+ * 4. Botones secundarios táctiles (mínimo 44px-48px).
+ * 5. Estado vacío claro si no hay datos.
+ * 6. Español sencillo sin tecnicismos.
  */
 export const RecentEntriesList: React.FC<RecentEntriesListProps> = ({
   registros,
   onEliminarRegistro,
 }) => {
-  // Mostramos los 5 registros más recientes (orden descendente por fecha)
   const ultimos = [...registros]
     .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-    .slice(0, 6);
-
-  if (ultimos.length === 0) {
-    return null;
-  }
+    .slice(0, 5);
 
   const formatearFechaHora = (iso: string) => {
     try {
@@ -42,61 +41,77 @@ export const RecentEntriesList: React.FC<RecentEntriesListProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-5">
+    <div className="bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-4 sm:p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Clock className="w-4 h-4 text-slate-500" />
-        <h3 className="text-sm font-bold text-slate-900">
-          Últimos Aportes Registrados
+        <Clock className="w-5 h-5 text-slate-800" />
+        <h3 className="text-lg font-black text-black">
+          Últimos pesajes anotados
         </h3>
       </div>
 
-      <div className="divide-y divide-slate-100">
-        {ultimos.map((reg) => {
-          const mat = MATERIALES[reg.materialId] || {
-            nombre: reg.materialId,
-            puntosPorKilo: 10,
-          };
+      {ultimos.length === 0 ? (
+        <div className="p-4 rounded-xl bg-slate-100 border border-slate-300 text-center">
+          <p className="text-base text-slate-800 font-medium">
+            No hay ningún pesaje registrado en el historial.
+          </p>
+        </div>
+      ) : (
+        <div className="divide-y-2 divide-slate-200">
+          {ultimos.map((reg) => {
+            const mat = MATERIALES[reg.materialId] || {
+              nombre: reg.materialId,
+              puntosPorKilo: 10,
+            };
 
-          return (
-            <div
-              key={reg.id}
-              className="py-2.5 flex items-center justify-between gap-3 text-xs"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-bold text-slate-900">{reg.seccion}</span>
-                  <span className="text-slate-400">·</span>
-                  <span className="text-slate-600 truncate">{mat.nombre}</span>
+            return (
+              <div
+                key={reg.id}
+                className="py-3 flex items-center justify-between gap-3 text-base"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-black text-black text-base">
+                      {reg.seccion}
+                    </span>
+                    <span className="text-slate-400">·</span>
+                    <span className="text-slate-900 font-bold truncate text-base">
+                      {mat.nombre}
+                    </span>
+                  </div>
+                  <div className="text-base text-slate-700 font-medium mt-0.5">
+                    {formatearFechaHora(reg.fecha)}
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-600 mt-0.5">
-                  {formatearFechaHora(reg.fecha)}
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <span className="font-mono font-black text-black block tabular-nums text-base">
+                      {reg.kilos} kg
+                    </span>
+                    <span className="text-base text-emerald-900 font-extrabold font-mono block">
+                      +{reg.puntos} pts
+                    </span>
+                  </div>
+
+                  {/* Botón táctil para corregir equivocación de pesaje (min 44px) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`¿Quieres borrar el pesaje de ${reg.kilos} kg de ${reg.seccion}?`)) {
+                        onEliminarRegistro(reg.id);
+                      }
+                    }}
+                    title="Borrar este pesaje si hubo una equivocación"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-700 hover:text-rose-700 rounded-xl hover:bg-rose-50 border border-slate-300 transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-right">
-                  <span className="font-mono font-bold text-slate-900 block tabular-nums">
-                    {reg.kilos} kg
-                  </span>
-                  <span className="text-[10px] text-emerald-700 font-semibold font-mono block">
-                    +{reg.puntos} pts
-                  </span>
-                </div>
-
-                {/* Botón para corregir errores de pesaje */}
-                <button
-                  type="button"
-                  onClick={() => onEliminarRegistro(reg.id)}
-                  title="Eliminar este registro si hubo equivocación"
-                  className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
