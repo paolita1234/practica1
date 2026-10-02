@@ -1,0 +1,6 @@
+{
+  "name": "Reciclar Puntos",
+  "description": "App para secciones de instituto compitiendo en reciclaje: registro de kilos por material, tabla de posiciones y meta mensual.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
