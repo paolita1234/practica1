@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trophy, PlusCircle, Sparkles, RefreshCw, BarChart3, HelpCircle } from 'lucide-react';
+import { Trophy, PlusCircle, Sparkles, RefreshCw, Download, FileText } from 'lucide-react';
 import { RegistroReciclaje } from './types/recycling';
 import {
   obtenerRegistros,
@@ -13,7 +13,9 @@ import {
   guardarMetaMensual,
   calcularPuntajesPorSeccion,
   calcularKilosTotalesInstituto,
+  exportarRegistrosAArchivoJSON,
 } from './utils/recyclingStorage';
+import { descargarReportePDF } from './utils/pdfGenerator';
 import { RegisterForm } from './components/RegisterForm';
 import { LeaderboardTable } from './components/LeaderboardTable';
 import { MonthlyGoalCard } from './components/MonthlyGoalCard';
@@ -117,15 +119,44 @@ export default function App() {
             </div>
           </div>
 
-          {/* Botón para reiniciar datos de prueba si se requiere */}
-          <button
-            type="button"
-            onClick={handleRestablecerDatos}
-            title="Restablecer datos de prueba"
-            className="p-1.5 text-emerald-300 hover:text-white rounded-lg hover:bg-emerald-700/60 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Botón para descargar reporte oficial en PDF */}
+            <button
+              type="button"
+              onClick={() =>
+                descargarReportePDF({
+                  puntajes: puntajesPorSeccion,
+                  kilosTotales: kilosTotalesInstituto,
+                  metaKilos,
+                })
+              }
+              title="Descargar reporte en PDF"
+              className="p-1.5 text-emerald-200 hover:text-white rounded-lg hover:bg-emerald-700/60 transition-colors flex items-center gap-1 text-xs font-medium"
+            >
+              <FileText className="w-4 h-4 text-emerald-300" />
+              <span className="hidden sm:inline text-[11px]">PDF</span>
+            </button>
+
+            {/* Botón para exportar copia de seguridad en JSON */}
+            <button
+              type="button"
+              onClick={() => exportarRegistrosAArchivoJSON(registros)}
+              title="Descargar copia de seguridad en JSON"
+              className="p-1.5 text-emerald-200 hover:text-white rounded-lg hover:bg-emerald-700/60 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+
+            {/* Botón para reiniciar datos de prueba si se requiere */}
+            <button
+              type="button"
+              onClick={handleRestablecerDatos}
+              title="Restablecer datos de prueba"
+              className="p-1.5 text-emerald-300 hover:text-white rounded-lg hover:bg-emerald-700/60 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
         {/* 
@@ -231,8 +262,24 @@ export default function App() {
                 onEliminarRegistro={handleEliminarRegistro}
               />
 
+              {/* Botón para descargar informe oficial en PDF */}
+              <button
+                type="button"
+                onClick={() =>
+                  descargarReportePDF({
+                    puntajes: puntajesPorSeccion,
+                    kilosTotales: kilosTotalesInstituto,
+                    metaKilos,
+                  })
+                }
+                className="w-full h-12 bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 min-h-[48px]"
+              >
+                <FileText className="w-4 h-4 text-emerald-300" />
+                <span>Descargar Reporte Completo en PDF</span>
+              </button>
+
               {/* Botón para volver a registrar pesaje */}
-              <div className="pt-2">
+              <div>
                 <button
                   type="button"
                   onClick={() => setPestanaActiva('registrar')}

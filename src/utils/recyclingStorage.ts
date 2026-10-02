@@ -198,3 +198,36 @@ export function calcularAvanceMeta(kilosActuales: number, metaKilos: number): {
     metaAlcanzada,
   };
 }
+
+/**
+ * Exporta todos los registros guardados a un archivo JSON descargable en el celular o PC.
+ */
+export function exportarRegistrosAArchivoJSON(registros: RegistroReciclaje[]): void {
+  try {
+    const jsonString = JSON.stringify(registros, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reciclar_puntos_respaldo_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error al exportar registros:', error);
+  }
+}
+
+/**
+ * Borra completamente la base de datos local de localStorage.
+ */
+export function borrarTodosLosRegistros(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(GOAL_STORAGE_KEY);
+  } catch (error) {
+    console.error('Error al borrar localStorage:', error);
+  }
+}
+
