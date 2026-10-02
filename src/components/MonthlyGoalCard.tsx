@@ -25,6 +25,7 @@ export const MonthlyGoalCard: React.FC<MonthlyGoalCardProps> = ({
 }) => {
   const [editando, setEditando] = useState(false);
   const [inputMeta, setInputMeta] = useState(metaKilos.toString());
+  const [errorMeta, setErrorMeta] = useState<string | null>(null);
 
   const { porcentajeReal, porcentajeBarra, kilosFaltantes, metaAlcanzada } = calcularAvanceMeta(
     kilosActuales,
@@ -32,16 +33,23 @@ export const MonthlyGoalCard: React.FC<MonthlyGoalCardProps> = ({
   );
 
   const handleGuardarMeta = () => {
+    setErrorMeta(null);
     const valorLimpio = inputMeta.replace(',', '.').trim();
+
+    if (!/^\d+(\.\d{1,2})?$/.test(valorLimpio)) {
+      setErrorMeta('Escribe un número válido (ej: 400).');
+      return;
+    }
+
     const numero = parseFloat(valorLimpio);
 
-    if (!isNaN(numero) && numero > 0) {
-      onActualizarMeta(numero);
-      setEditando(false);
-    } else {
-      setInputMeta(metaKilos.toString());
-      setEditando(false);
+    if (numero <= 0 || numero > 10000) {
+      setErrorMeta('Debe ser entre 1 y 10.000 kg.');
+      return;
     }
+
+    onActualizarMeta(numero);
+    setEditando(false);
   };
 
   const nombreMes = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(new Date());
@@ -108,6 +116,11 @@ export const MonthlyGoalCard: React.FC<MonthlyGoalCardProps> = ({
                 <span>Listo</span>
               </button>
             </div>
+            {errorMeta && (
+              <p className="text-base font-bold text-rose-700 mt-1">
+                {errorMeta}
+              </p>
+            )}
           </div>
         )}
       </div>

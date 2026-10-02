@@ -32,6 +32,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [kilosInput, setKilosInput] = useState<string>('');
   const [errorValidacion, setErrorValidacion] = useState<string | null>(null);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
+  const [bloqueado, setBloqueado] = useState(false);
 
   const materialActual = MATERIALES[materialSeleccionado];
 
@@ -44,25 +45,48 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (bloqueado) return;
     setErrorValidacion(null);
     setMensajeExito(null);
 
+    // 1. Validar nombre de la sección (evitar vacíos, espacios invisibles y más de 30 caracteres)
     const seccionFinal = (
       usarPersonalizada ? seccionPersonalizada.trim() : seccionSeleccionada
     ).trim();
 
-    if (!seccionFinal) {
+    if (!seccionFinal || !/[a-zA-Z0-9]/.test(seccionFinal)) {
       setErrorValidacion('Por favor indica qué sección o grado está entregando el material.');
       return;
     }
 
-    const textoLimpio = kilosInput.replace(',', '.').trim();
-    const kilos = parseFloat(textoLimpio);
+    if (seccionFinal.length > 30) {
+      setErrorValidacion('El nombre de la sección no puede tener más de 30 caracteres.');
+      return;
+    }
+
+    // 2. Validar formato estricto de kilos (sin letras pegadas como "12kg", ni comas dobles como "2..5")
+    const textoLimpio = kilosInput.trim();
+    if (!/^\d+([.,]\d{1,2})?$/.test(textoLimpio)) {
+      setErrorValidacion('Por favor escribe un número válido (ejemplo: 2 o 3.5), sin letras ni caracteres extraños.');
+      return;
+    }
+
+    const kilos = parseFloat(textoLimpio.replace(',', '.'));
 
     if (isNaN(kilos) || kilos <= 0) {
       setErrorValidacion('Por favor escribe un número mayor a cero en los kilos (ejemplo: 2.5).');
       return;
     }
+
+    // 3. Tope máximo razonable para balanzas escolares (evita desbordamientos como 9999999)
+    if (kilos > 500) {
+      setErrorValidacion('La cantidad no puede superar los 500 kilos en un solo pesaje escolar.');
+      return;
+    }
+
+    // 4. Bloqueo temporal para evitar duplicación por doble clic rápido
+    setBloqueado(true);
+    setTimeout(() => setBloqueado(false), 1200);
 
     const kilosRedondeados = Number(kilos.toFixed(2));
     const puntos = Number((kilosRedondeados * materialActual.puntosPorKilo).toFixed(1));
@@ -243,8 +267,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               <input
                 id="input-seccion-personalizada"
                 type="text"
+                maxLength={30}
                 value={seccionPersonalizada}
-                onChange={(e) => setSeccionPersonalizada(e.target.value)}
+                onChange={(e) => setSeccionPersonalizada(e.target.value.slice(0, 30))}
                 placeholder="Ejemplo: 5° Informática"
                 className="w-full min-h-[50px] px-3 rounded-xl border-2 border-slate-700 text-base font-bold text-black focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-white"
               />
@@ -399,10 +424,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           <button
             type="submit"
             id="btn-guardar-pesaje"
-            className="w-full min-h-[54px] bg-emerald-900 hover:bg-black active:scale-[0.99] text-white font-black text-lg rounded-xl shadow-md transition-all flex items-center justify-center gap-2 border-2 border-black"
+            disabled={bloqueado}
+            className={`w-full min-h-[54px] bg-emerald-900 hover:bg-black active:scale-[0.99] text-white font-black text-lg rounded-xl shadow-md transition-all flex items-center justify-center gap-2 border-2 border-black ${
+              bloqueado ? 'opacity-60 cursor-not-allowed' : ''
+            }`}
           >
             <PlusCircle className="w-6 h-6" />
-            <span>Guardar este pesaje</span>
+            <span>{bloqueado ? 'Guardando...' : 'Guardar este pesaje'}</span>
           </button>
 
           <button
