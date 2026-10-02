@@ -20,6 +20,7 @@ import { RegisterForm } from './components/RegisterForm';
 import { LeaderboardTable } from './components/LeaderboardTable';
 import { MonthlyGoalCard } from './components/MonthlyGoalCard';
 import { RecentEntriesList } from './components/RecentEntriesList';
+import { EquivalenteEcologicoCard } from './components/EquivalenteEcologicoCard';
 
 export default function App() {
   const [pestanaActiva, setPestanaActiva] = useState<'registrar' | 'resultados'>('registrar');
@@ -238,6 +239,11 @@ export default function App() {
                 kilosActuales={kilosTotalesInstituto}
                 metaKilos={metaKilos}
                 onActualizarMeta={setMetaKilos}
+              />
+
+              {/* Impacto ecológico convertido con Gemini AI y fuentes citadas */}
+              <EquivalenteEcologicoCard
+                kilosTotales={kilosTotalesInstituto}
               />
 
               {/* Requerimiento 2: Tabla de posiciones */}
